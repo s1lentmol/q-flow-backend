@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "s1lentmol.auth.v1;authv1";
+option go_package = "github.com/s1lentmol/q-flow-backend/protos/gen/go/auth";
 
 service Auth {
     rpc Register (RegisterRequest) returns (RegisterResponse);
