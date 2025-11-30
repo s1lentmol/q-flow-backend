@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package queue;
+
+option go_package = "github.com/s1lentmol/q-flow-backend/protos/gen/go/queue;queuev1";
+
+service Queue {
+  rpc ListQueues (ListQueuesRequest) returns (ListQueuesResponse);
+  rpc CreateQueue (CreateQueueRequest) returns (CreateQueueResponse);
+  rpc GetQueue (GetQueueRequest) returns (GetQueueResponse);
+  rpc JoinQueue (JoinQueueRequest) returns (JoinQueueResponse);
+  rpc LeaveQueue (LeaveQueueRequest) returns (LeaveQueueResponse);
+  rpc AdvanceQueue (AdvanceQueueRequest) returns (AdvanceQueueResponse);
+  rpc RemoveParticipant (RemoveParticipantRequest) returns (RemoveParticipantResponse);
+  rpc ArchiveQueue (ArchiveQueueRequest) returns (ArchiveQueueResponse);
+  rpc DeleteQueue (DeleteQueueRequest) returns (DeleteQueueResponse);
+}
+
+enum QueueMode {
+  QUEUE_MODE_UNSPECIFIED = 0;
+  QUEUE_MODE_LIVE = 1;
+  QUEUE_MODE_MANAGED = 2;
+  QUEUE_MODE_RANDOM = 3;
+  QUEUE_MODE_SLOTS = 4;
+}
+
+enum QueueStatus {
+  QUEUE_STATUS_UNSPECIFIED = 0;
+  QUEUE_STATUS_ACTIVE = 1;
+  QUEUE_STATUS_ARCHIVED = 2;
+}
+
+message QueueDTO {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  QueueMode mode = 4;
+  QueueStatus status = 5;
+  string group_code = 6;
+  int64 owner_id = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message ParticipantDTO {
+  int64 id = 1;
+  int64 queue_id = 2;
+  int64 user_id = 3;
+  int32 position = 4;
+  int64 created_at = 5;
+  string slot_time = 6;
+}
+
+message ListQueuesRequest {
+  string group_code = 1;
+}
+
+message ListQueuesResponse {
+  repeated QueueDTO queues = 1;
+}
+
+message CreateQueueRequest {
+  string title = 1;
+  string description = 2;
+  QueueMode mode = 3;
+  string group_code = 4;
+  int64 owner_id = 5;
+}
+
+message CreateQueueResponse {
+  QueueDTO queue = 1;
+}
+
+message GetQueueRequest {
+  int64 queue_id = 1;
+  string group_code = 2;
+}
+
+message GetQueueResponse {
+  QueueDTO queue = 1;
+  repeated ParticipantDTO participants = 2;
+}
+
+message JoinQueueRequest {
+  int64 queue_id = 1;
+  int64 user_id = 2;
+  string group_code = 3;
+  string slot_time = 4; // RFC3339, required for slots mode
+}
+
+message JoinQueueResponse {
+  int32 position = 1;
+}
+
+message LeaveQueueRequest {
+  int64 queue_id = 1;
+  int64 user_id = 2;
+  string group_code = 3;
+}
+
+message LeaveQueueResponse {}
+
+message AdvanceQueueRequest {
+  int64 queue_id = 1;
+  string group_code = 2;
+  int64 actor_id = 3; // must be owner
+}
+
+message AdvanceQueueResponse {
+  ParticipantDTO removed = 1;
+}
+
+message RemoveParticipantRequest {
+  int64 queue_id = 1;
+  int64 user_id = 2; // participant to remove
+  int64 actor_id = 3; // must be owner
+  string group_code = 4;
+}
+
+message RemoveParticipantResponse {}
+
+message ArchiveQueueRequest {
+  int64 queue_id = 1;
+  string group_code = 2;
+  int64 actor_id = 3; // owner
+}
+
+message ArchiveQueueResponse {}
+
+message DeleteQueueRequest {
+  int64 queue_id = 1;
+  string group_code = 2;
+  int64 actor_id = 3; // owner
+}
+
+message DeleteQueueResponse {}
