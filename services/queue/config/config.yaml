@@ -1,0 +1,13 @@
+env: "local"
+token_ttl: 1h
+db:
+     username: postgres
+     password: "postgres"
+     host: localhost
+     port: 5432
+     name: postgres
+grpc:
+    port: 44045
+    timeout: 10h
+notify:
+    address: "notification:44046"
