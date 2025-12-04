@@ -1,0 +1,12 @@
+env: "local"
+db:
+  username: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+  database: postgres
+grpc:
+  port: 44046
+  timeout: 10h
+telegram:
+  token: ""
