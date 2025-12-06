@@ -1,0 +1,116 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: qflow-auth-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    container_name: qflow-auth
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    env_file:
+      - .env
+    environment:
+      ENV_ENV: ${ENV_ENV}
+      ENV_TOKEN_TTL: ${ENV_TOKEN_TTL}
+      ENV_DB_USERNAME: ${POSTGRES_USER}
+      ENV_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ENV_DB_HOST: ${ENV_DB_HOST}
+      ENV_DB_PORT: ${ENV_DB_PORT}
+      ENV_DB_NAME: ${POSTGRES_DB}
+      ENV_GRPC_PORT: ${ENV_GRPC_PORT}
+    ports:
+      - "44044:44044"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  queue:
+    container_name: qflow-queue
+    build:
+      context: .
+      dockerfile: services/queue/Dockerfile
+    env_file:
+      - .env
+    environment:
+      ENV_ENV: ${ENV_ENV}
+      ENV_DB_USERNAME: ${POSTGRES_USER}
+      ENV_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ENV_DB_HOST: ${ENV_DB_HOST}
+      ENV_DB_PORT: ${ENV_DB_PORT}
+      ENV_DB_NAME: ${POSTGRES_DB}
+      ENV_GRPC_PORT: ${QUEUE_GRPC_PORT}
+      ENV_NOTIFY_ADDRESS: ${NOTIFY_ADDRESS}
+    ports:
+      - "${QUEUE_GRPC_PORT}:44045"
+    depends_on:
+      db:
+        condition: service_healthy
+      notification:
+        condition: service_started
+    restart: unless-stopped
+
+  notification:
+    container_name: qflow-notification
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    env_file:
+      - .env
+    environment:
+      ENV_ENV: ${ENV_ENV}
+      ENV_DB_USERNAME: ${POSTGRES_USER}
+      ENV_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ENV_DB_HOST: ${ENV_DB_HOST}
+      ENV_DB_PORT: ${ENV_DB_PORT}
+      ENV_DB_DATABASE: ${POSTGRES_DB}
+      ENV_GRPC_PORT: ${NOTIFICATION_GRPC_PORT}
+      ENV_TELEGRAM_TOKEN: ${ENV_TELEGRAM_TOKEN:-}
+    ports:
+      - "${NOTIFICATION_GRPC_PORT}:44046"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api-gateway:
+    container_name: qflow-api-gateway
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    env_file:
+      - .env
+    environment:
+      ENV_ENV: ${ENV_ENV}
+      ENV_HTTP_PORT: ${API_HTTP_PORT}
+      ENV_GRPC_AUTH_ADDRESS: ${AUTH_GRPC_ADDR}
+      ENV_GRPC_QUEUE_ADDRESS: ${QUEUE_GRPC_ADDR}
+      ENV_GRPC_NOTIFICATION_ADDRESS: ${NOTIFICATION_GRPC_ADDR}
+      ENV_APP_ID: ${APP_ID}
+      ENV_APP_SECRET: ${APP_SECRET}
+    ports:
+      - "${API_HTTP_PORT}:8080"
+    depends_on:
+      - auth
+      - queue
+      - notification
+    restart: unless-stopped
+
+volumes:
+  db_data:

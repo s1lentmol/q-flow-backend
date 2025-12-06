@@ -1,0 +1,11 @@
+env: "local"
+http:
+  port: 8080
+grpc:
+  auth_address: "auth:44044"
+  queue_address: "queue:44045"
+  notification_address: "notification:44046"
+  timeout: 10s
+app:
+  id: 1
+  secret: "supersecret"

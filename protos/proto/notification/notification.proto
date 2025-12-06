@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "github.com/s1lentmol/q-flow-backend/protos/gen/go/notification;notificationv1";
+
+service Notification {
+  rpc NotifyPositionSoon (NotifyPositionSoonRequest) returns (NotifyPositionSoonResponse);
+  rpc SetContact (SetContactRequest) returns (SetContactResponse);
+}
+
+message NotifyPositionSoonRequest {
+  int64 user_id = 1;
+  string queue_title = 2;
+  int32 position = 3;
+}
+
+message NotifyPositionSoonResponse {}
+
+message SetContactRequest {
+  int64 user_id = 1;
+  string telegram_username = 2; // without @
+  string chat_id = 3; // optional explicit chat_id
+}
+
+message SetContactResponse {}
