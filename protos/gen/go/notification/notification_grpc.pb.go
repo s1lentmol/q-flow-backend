@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Notification_NotifyPositionSoon_FullMethodName = "/notification.Notification/NotifyPositionSoon"
 	Notification_SetContact_FullMethodName         = "/notification.Notification/SetContact"
+	Notification_CreateLinkToken_FullMethodName    = "/notification.Notification/CreateLinkToken"
+	Notification_BindByToken_FullMethodName        = "/notification.Notification/BindByToken"
 )
 
 // NotificationClient is the client API for Notification service.
@@ -29,6 +31,10 @@ const (
 type NotificationClient interface {
 	NotifyPositionSoon(ctx context.Context, in *NotifyPositionSoonRequest, opts ...grpc.CallOption) (*NotifyPositionSoonResponse, error)
 	SetContact(ctx context.Context, in *SetContactRequest, opts ...grpc.CallOption) (*SetContactResponse, error)
+	// Issues a start-link token for the user; frontend uses it in https://t.me/<bot>?start=<token>.
+	CreateLinkToken(ctx context.Context, in *CreateLinkTokenRequest, opts ...grpc.CallOption) (*CreateLinkTokenResponse, error)
+	// Consumes the token received from Telegram /start webhook and binds chat_id to user.
+	BindByToken(ctx context.Context, in *BindByTokenRequest, opts ...grpc.CallOption) (*BindByTokenResponse, error)
 }
 
 type notificationClient struct {
@@ -59,12 +65,36 @@ func (c *notificationClient) SetContact(ctx context.Context, in *SetContactReque
 	return out, nil
 }
 
+func (c *notificationClient) CreateLinkToken(ctx context.Context, in *CreateLinkTokenRequest, opts ...grpc.CallOption) (*CreateLinkTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateLinkTokenResponse)
+	err := c.cc.Invoke(ctx, Notification_CreateLinkToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationClient) BindByToken(ctx context.Context, in *BindByTokenRequest, opts ...grpc.CallOption) (*BindByTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BindByTokenResponse)
+	err := c.cc.Invoke(ctx, Notification_BindByToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NotificationServer is the server API for Notification service.
 // All implementations must embed UnimplementedNotificationServer
 // for forward compatibility.
 type NotificationServer interface {
 	NotifyPositionSoon(context.Context, *NotifyPositionSoonRequest) (*NotifyPositionSoonResponse, error)
 	SetContact(context.Context, *SetContactRequest) (*SetContactResponse, error)
+	// Issues a start-link token for the user; frontend uses it in https://t.me/<bot>?start=<token>.
+	CreateLinkToken(context.Context, *CreateLinkTokenRequest) (*CreateLinkTokenResponse, error)
+	// Consumes the token received from Telegram /start webhook and binds chat_id to user.
+	BindByToken(context.Context, *BindByTokenRequest) (*BindByTokenResponse, error)
 	mustEmbedUnimplementedNotificationServer()
 }
 
@@ -80,6 +110,12 @@ func (UnimplementedNotificationServer) NotifyPositionSoon(context.Context, *Noti
 }
 func (UnimplementedNotificationServer) SetContact(context.Context, *SetContactRequest) (*SetContactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetContact not implemented")
+}
+func (UnimplementedNotificationServer) CreateLinkToken(context.Context, *CreateLinkTokenRequest) (*CreateLinkTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateLinkToken not implemented")
+}
+func (UnimplementedNotificationServer) BindByToken(context.Context, *BindByTokenRequest) (*BindByTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BindByToken not implemented")
 }
 func (UnimplementedNotificationServer) mustEmbedUnimplementedNotificationServer() {}
 func (UnimplementedNotificationServer) testEmbeddedByValue()                      {}
@@ -138,6 +174,42 @@ func _Notification_SetContact_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Notification_CreateLinkToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLinkTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServer).CreateLinkToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Notification_CreateLinkToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServer).CreateLinkToken(ctx, req.(*CreateLinkTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Notification_BindByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BindByTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServer).BindByToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Notification_BindByToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServer).BindByToken(ctx, req.(*BindByTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Notification_ServiceDesc is the grpc.ServiceDesc for Notification service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +224,14 @@ var Notification_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetContact",
 			Handler:    _Notification_SetContact_Handler,
+		},
+		{
+			MethodName: "CreateLinkToken",
+			Handler:    _Notification_CreateLinkToken_Handler,
+		},
+		{
+			MethodName: "BindByToken",
+			Handler:    _Notification_BindByToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

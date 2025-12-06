@@ -1,0 +1,588 @@
+openapi: 3.0.3
+info:
+  title: Q-Flow API Gateway
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local gateway
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    QueueMode:
+      type: string
+      enum: [live, managed, random, slots]
+    QueueStatus:
+      type: string
+      enum: [active, archived]
+    Queue:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        mode:
+          $ref: '#/components/schemas/QueueMode'
+        status:
+          $ref: '#/components/schemas/QueueStatus'
+        group_code:
+          type: string
+        owner_id:
+          type: integer
+          format: int64
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp seconds
+        updated_at:
+          type: integer
+          format: int64
+          description: Unix timestamp seconds
+    Participant:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        queue_id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        position:
+          type: integer
+        slot_time:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp seconds
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    ContactRequest:
+      type: object
+      properties:
+        telegram_username:
+          type: string
+          description: Username without @
+        chat_id:
+          type: string
+          description: Explicit chat_id if known
+    LinkTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        link:
+          type: string
+          description: Telegram deep-link if bot_name is configured
+    CreateQueueRequest:
+      type: object
+      required: [title, mode, group_code]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        mode:
+          $ref: '#/components/schemas/QueueMode'
+        group_code:
+          type: string
+    GroupRequest:
+      type: object
+      required: [group_code]
+      properties:
+        group_code:
+          type: string
+    JoinQueueRequest:
+      type: object
+      required: [group_code]
+      properties:
+        group_code:
+          type: string
+        slot_time:
+          type: string
+          format: date-time
+          description: Required when mode=slots
+    RemoveParticipantRequest:
+      type: object
+      required: [group_code, user_id]
+      properties:
+        group_code:
+          type: string
+        user_id:
+          type: integer
+          format: int64
+    QueueDetails:
+      type: object
+      properties:
+        queue:
+          $ref: '#/components/schemas/Queue'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participant'
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        format: int64
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /profile/contact:
+    post:
+      tags: [Profile]
+      summary: Set Telegram contact for notifications
+      security: [{BearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactRequest'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: ok
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /profile/contact/link:
+    post:
+      tags: [Profile]
+      summary: Create Telegram start link for current user
+      security: [{BearerAuth: []}]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telegram_username:
+                  type: string
+                  description: Optional username hint
+      responses:
+        '200':
+          description: Link token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LinkTokenResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /telegram/webhook:
+    post:
+      tags: [Telegram]
+      summary: Telegram webhook handler (/start <token>)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Raw Telegram update payload
+      responses:
+        '200':
+          description: Accepted
+  /queues:
+    get:
+      tags: [Queues]
+      summary: List queues for group
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: query
+          name: group
+          required: true
+          schema:
+            type: string
+          description: Group code
+      responses:
+        '200':
+          description: List of active queues for group
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Queue'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Queues]
+      summary: Create queue
+      security: [{BearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQueueRequest'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Queue'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}:
+    get:
+      tags: [Queues]
+      summary: Get queue with participants
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: group
+          required: true
+          schema:
+            type: string
+          description: Group code
+      responses:
+        '200':
+          description: Queue details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/QueueDetails'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Queues]
+      summary: Delete queue
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: ok
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/join:
+    post:
+      tags: [Queues]
+      summary: Join queue
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinQueueRequest'
+      responses:
+        '200':
+          description: Joined
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      position:
+                        type: integer
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/leave:
+    post:
+      tags: [Queues]
+      summary: Leave queue
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '200':
+          description: Left
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: ok
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/advance:
+    post:
+      tags: [Queues]
+      summary: Advance queue (owner only)
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '200':
+          description: Removed participant returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Participant'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/remove:
+    post:
+      tags: [Queues]
+      summary: Remove participant (owner only)
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveParticipantRequest'
+      responses:
+        '200':
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: ok
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/archive:
+    post:
+      tags: [Queues]
+      summary: Archive queue (owner only)
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '200':
+          description: Archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: ok
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

@@ -31,7 +31,8 @@ type GRPCConfig struct {
 }
 
 type TelegramConfig struct {
-	Token string `yaml:"token"`
+	Token string `yaml:"token" mapstructure:"token"`
+	Bot   string `yaml:"bot_name" mapstructure:"bot_name"`
 }
 
 //go:embed config.yaml

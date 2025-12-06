@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.22 AS builder
+FROM golang:1.25 AS builder
 WORKDIR /app
+ENV GOWORK=off
 
 COPY go.work go.work.sum ./
 COPY services/notification/go.mod services/notification/go.sum ./services/notification/

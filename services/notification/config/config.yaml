@@ -10,3 +10,4 @@ grpc:
   timeout: 10h
 telegram:
   token: ""
+  bot_name: ""

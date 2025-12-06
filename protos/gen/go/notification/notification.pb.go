@@ -213,6 +213,206 @@ func (*SetContactResponse) Descriptor() ([]byte, []int) {
 	return file_notification_notification_proto_rawDescGZIP(), []int{3}
 }
 
+type CreateLinkTokenRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	UserId           int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TelegramUsername string                 `protobuf:"bytes,2,opt,name=telegram_username,json=telegramUsername,proto3" json:"telegram_username,omitempty"` // optional, prefilled username
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CreateLinkTokenRequest) Reset() {
+	*x = CreateLinkTokenRequest{}
+	mi := &file_notification_notification_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinkTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinkTokenRequest) ProtoMessage() {}
+
+func (x *CreateLinkTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_notification_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinkTokenRequest.ProtoReflect.Descriptor instead.
+func (*CreateLinkTokenRequest) Descriptor() ([]byte, []int) {
+	return file_notification_notification_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateLinkTokenRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *CreateLinkTokenRequest) GetTelegramUsername() string {
+	if x != nil {
+		return x.TelegramUsername
+	}
+	return ""
+}
+
+type CreateLinkTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Link          string                 `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"` // https://t.me/<bot>?start=<token> if bot name known
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLinkTokenResponse) Reset() {
+	*x = CreateLinkTokenResponse{}
+	mi := &file_notification_notification_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinkTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinkTokenResponse) ProtoMessage() {}
+
+func (x *CreateLinkTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_notification_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinkTokenResponse.ProtoReflect.Descriptor instead.
+func (*CreateLinkTokenResponse) Descriptor() ([]byte, []int) {
+	return file_notification_notification_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateLinkTokenResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *CreateLinkTokenResponse) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
+type BindByTokenRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Token            string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ChatId           string                 `protobuf:"bytes,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	TelegramUsername string                 `protobuf:"bytes,3,opt,name=telegram_username,json=telegramUsername,proto3" json:"telegram_username,omitempty"` // from message.from.username, optional
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *BindByTokenRequest) Reset() {
+	*x = BindByTokenRequest{}
+	mi := &file_notification_notification_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindByTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindByTokenRequest) ProtoMessage() {}
+
+func (x *BindByTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_notification_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindByTokenRequest.ProtoReflect.Descriptor instead.
+func (*BindByTokenRequest) Descriptor() ([]byte, []int) {
+	return file_notification_notification_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BindByTokenRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *BindByTokenRequest) GetChatId() string {
+	if x != nil {
+		return x.ChatId
+	}
+	return ""
+}
+
+func (x *BindByTokenRequest) GetTelegramUsername() string {
+	if x != nil {
+		return x.TelegramUsername
+	}
+	return ""
+}
+
+type BindByTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindByTokenResponse) Reset() {
+	*x = BindByTokenResponse{}
+	mi := &file_notification_notification_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindByTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindByTokenResponse) ProtoMessage() {}
+
+func (x *BindByTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_notification_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindByTokenResponse.ProtoReflect.Descriptor instead.
+func (*BindByTokenResponse) Descriptor() ([]byte, []int) {
+	return file_notification_notification_proto_rawDescGZIP(), []int{7}
+}
+
 var File_notification_notification_proto protoreflect.FileDescriptor
 
 const file_notification_notification_proto_rawDesc = "" +
@@ -228,11 +428,24 @@ const file_notification_notification_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12+\n" +
 	"\x11telegram_username\x18\x02 \x01(\tR\x10telegramUsername\x12\x17\n" +
 	"\achat_id\x18\x03 \x01(\tR\x06chatId\"\x14\n" +
-	"\x12SetContactResponse2\xc8\x01\n" +
+	"\x12SetContactResponse\"^\n" +
+	"\x16CreateLinkTokenRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12+\n" +
+	"\x11telegram_username\x18\x02 \x01(\tR\x10telegramUsername\"C\n" +
+	"\x17CreateLinkTokenResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x12\n" +
+	"\x04link\x18\x02 \x01(\tR\x04link\"p\n" +
+	"\x12BindByTokenRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\tR\x06chatId\x12+\n" +
+	"\x11telegram_username\x18\x03 \x01(\tR\x10telegramUsername\"\x15\n" +
+	"\x13BindByTokenResponse2\xfc\x02\n" +
 	"\fNotification\x12g\n" +
 	"\x12NotifyPositionSoon\x12'.notification.NotifyPositionSoonRequest\x1a(.notification.NotifyPositionSoonResponse\x12O\n" +
 	"\n" +
-	"SetContact\x12\x1f.notification.SetContactRequest\x1a .notification.SetContactResponseBOZMgithub.com/s1lentmol/q-flow-backend/protos/gen/go/notification;notificationv1b\x06proto3"
+	"SetContact\x12\x1f.notification.SetContactRequest\x1a .notification.SetContactResponse\x12^\n" +
+	"\x0fCreateLinkToken\x12$.notification.CreateLinkTokenRequest\x1a%.notification.CreateLinkTokenResponse\x12R\n" +
+	"\vBindByToken\x12 .notification.BindByTokenRequest\x1a!.notification.BindByTokenResponseBOZMgithub.com/s1lentmol/q-flow-backend/protos/gen/go/notification;notificationv1b\x06proto3"
 
 var (
 	file_notification_notification_proto_rawDescOnce sync.Once
@@ -246,20 +459,28 @@ func file_notification_notification_proto_rawDescGZIP() []byte {
 	return file_notification_notification_proto_rawDescData
 }
 
-var file_notification_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_notification_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_notification_notification_proto_goTypes = []any{
 	(*NotifyPositionSoonRequest)(nil),  // 0: notification.NotifyPositionSoonRequest
 	(*NotifyPositionSoonResponse)(nil), // 1: notification.NotifyPositionSoonResponse
 	(*SetContactRequest)(nil),          // 2: notification.SetContactRequest
 	(*SetContactResponse)(nil),         // 3: notification.SetContactResponse
+	(*CreateLinkTokenRequest)(nil),     // 4: notification.CreateLinkTokenRequest
+	(*CreateLinkTokenResponse)(nil),    // 5: notification.CreateLinkTokenResponse
+	(*BindByTokenRequest)(nil),         // 6: notification.BindByTokenRequest
+	(*BindByTokenResponse)(nil),        // 7: notification.BindByTokenResponse
 }
 var file_notification_notification_proto_depIdxs = []int32{
 	0, // 0: notification.Notification.NotifyPositionSoon:input_type -> notification.NotifyPositionSoonRequest
 	2, // 1: notification.Notification.SetContact:input_type -> notification.SetContactRequest
-	1, // 2: notification.Notification.NotifyPositionSoon:output_type -> notification.NotifyPositionSoonResponse
-	3, // 3: notification.Notification.SetContact:output_type -> notification.SetContactResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: notification.Notification.CreateLinkToken:input_type -> notification.CreateLinkTokenRequest
+	6, // 3: notification.Notification.BindByToken:input_type -> notification.BindByTokenRequest
+	1, // 4: notification.Notification.NotifyPositionSoon:output_type -> notification.NotifyPositionSoonResponse
+	3, // 5: notification.Notification.SetContact:output_type -> notification.SetContactResponse
+	5, // 6: notification.Notification.CreateLinkToken:output_type -> notification.CreateLinkTokenResponse
+	7, // 7: notification.Notification.BindByToken:output_type -> notification.BindByTokenResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -276,7 +497,7 @@ func file_notification_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notification_notification_proto_rawDesc), len(file_notification_notification_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

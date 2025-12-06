@@ -51,6 +51,8 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
+	applyDefaults(&appConfig)
+
 	return &appConfig, nil
 }
 
@@ -63,4 +65,18 @@ func (cfg *Config) GetDSN() string {
 		cfg.DB.Port,
 		cfg.DB.Name,
 	)
+}
+
+// applyDefaults ensures non-empty runtime values even if env overrides come empty.
+func applyDefaults(cfg *Config) {
+	if cfg.TokenTTL == 0 {
+		cfg.TokenTTL = time.Hour
+	}
+
+	if cfg.GRPC.Port == 0 {
+		cfg.GRPC.Port = 44044
+	}
+	if cfg.GRPC.Timeout == 0 {
+		cfg.GRPC.Timeout = 10 * time.Hour
+	}
 }

@@ -7,6 +7,10 @@ option go_package = "github.com/s1lentmol/q-flow-backend/protos/gen/go/notificat
 service Notification {
   rpc NotifyPositionSoon (NotifyPositionSoonRequest) returns (NotifyPositionSoonResponse);
   rpc SetContact (SetContactRequest) returns (SetContactResponse);
+  // Issues a start-link token for the user; frontend uses it in https://t.me/<bot>?start=<token>.
+  rpc CreateLinkToken (CreateLinkTokenRequest) returns (CreateLinkTokenResponse);
+  // Consumes the token received from Telegram /start webhook and binds chat_id to user.
+  rpc BindByToken (BindByTokenRequest) returns (BindByTokenResponse);
 }
 
 message NotifyPositionSoonRequest {
@@ -24,3 +28,21 @@ message SetContactRequest {
 }
 
 message SetContactResponse {}
+
+message CreateLinkTokenRequest {
+  int64 user_id = 1;
+  string telegram_username = 2; // optional, prefilled username
+}
+
+message CreateLinkTokenResponse {
+  string token = 1;
+  string link = 2; // https://t.me/<bot>?start=<token> if bot name known
+}
+
+message BindByTokenRequest {
+  string token = 1;
+  string chat_id = 2;
+  string telegram_username = 3; // from message.from.username, optional
+}
+
+message BindByTokenResponse {}

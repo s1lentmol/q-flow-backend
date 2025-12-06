@@ -2,6 +2,8 @@ package notification
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -15,6 +17,8 @@ import (
 type ContactStorage interface {
 	UpsertContact(ctx context.Context, contact domain.Contact) error
 	GetContact(ctx context.Context, userID int64) (domain.Contact, error)
+	CreateLinkToken(ctx context.Context, token domain.LinkToken) error
+	ConsumeLinkToken(ctx context.Context, token string) (domain.LinkToken, error)
 }
 
 type Service struct {
@@ -22,14 +26,16 @@ type Service struct {
 	storage       ContactStorage
 	telegramToken string
 	httpClient    *http.Client
+	botName       string
 }
 
-func New(log *slog.Logger, storage ContactStorage, telegramToken string) *Service {
+func New(log *slog.Logger, storage ContactStorage, telegramToken string, botName string) *Service {
 	return &Service{
 		log:           log,
 		storage:       storage,
 		telegramToken: telegramToken,
 		httpClient:    &http.Client{Timeout: 5 * time.Second},
+		botName:       botName,
 	}
 }
 
@@ -94,4 +100,49 @@ func (s *Service) sendTelegramMessage(ctx context.Context, chatID, text string) 
 	}
 
 	return nil
+}
+
+func (s *Service) CreateLinkToken(ctx context.Context, userID int64, username string) (string, string, error) {
+	token, err := generateToken(32)
+	if err != nil {
+		return "", "", fmt.Errorf("generate token: %w", err)
+	}
+	link := ""
+	if s.botName != "" {
+		link = fmt.Sprintf("https://t.me/%s?start=%s", s.botName, token)
+	}
+	if err := s.storage.CreateLinkToken(ctx, domain.LinkToken{
+		Token:    token,
+		UserID:   userID,
+		Username: username,
+	}); err != nil {
+		return "", "", err
+	}
+	return token, link, nil
+}
+
+func (s *Service) BindByToken(ctx context.Context, token, chatID, username string) error {
+	link, err := s.storage.ConsumeLinkToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	// prefer username from telegram update, fallback to stored
+	name := strings.TrimPrefix(username, "@")
+	if name == "" {
+		name = link.Username
+	}
+	contact := domain.Contact{
+		UserID:   link.UserID,
+		Username: name,
+		ChatID:   chatID,
+	}
+	return s.storage.UpsertContact(ctx, contact)
+}
+
+func generateToken(n int) (string, error) {
+	buf := make([]byte, n)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
 }

@@ -52,5 +52,34 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
+	applyDefaults(&cfg)
+
 	return &cfg, nil
+}
+
+// applyDefaults protects against empty env overrides (e.g. unset compose vars).
+func applyDefaults(cfg *Config) {
+	if cfg.HTTP.Port == 0 {
+		cfg.HTTP.Port = 8080
+	}
+
+	if cfg.GRPC.AuthAddress == "" {
+		cfg.GRPC.AuthAddress = "auth:44044"
+	}
+	if cfg.GRPC.QueueAddress == "" {
+		cfg.GRPC.QueueAddress = "queue:44045"
+	}
+	if cfg.GRPC.NotificationAddress == "" {
+		cfg.GRPC.NotificationAddress = "notification:44046"
+	}
+	if cfg.GRPC.Timeout == 0 {
+		cfg.GRPC.Timeout = 10 * time.Second
+	}
+
+	if cfg.App.ID == 0 {
+		cfg.App.ID = 1
+	}
+	if cfg.App.Secret == "" {
+		cfg.App.Secret = "supersecret"
+	}
 }

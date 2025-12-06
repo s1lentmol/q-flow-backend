@@ -54,3 +54,33 @@ func (s *Storage) GetContact(ctx context.Context, userID int64) (domain.Contact,
 	}
 	return c, nil
 }
+
+func (s *Storage) CreateLinkToken(ctx context.Context, token domain.LinkToken) error {
+	const query = `
+INSERT INTO telegram_link_tokens (token, user_id, telegram_username)
+VALUES ($1, $2, $3)
+`
+	_, err := s.pool.Exec(ctx, query, token.Token, token.UserID, token.Username)
+	if err != nil {
+		return fmt.Errorf("postgres: create link token: %w", err)
+	}
+	return nil
+}
+
+func (s *Storage) ConsumeLinkToken(ctx context.Context, token string) (domain.LinkToken, error) {
+	const query = `
+UPDATE telegram_link_tokens
+SET used_at = NOW()
+WHERE token = $1 AND used_at IS NULL
+RETURNING token, user_id, telegram_username, created_at, used_at
+`
+	var lt domain.LinkToken
+	if err := s.pool.QueryRow(ctx, query, token).
+		Scan(&lt.Token, &lt.UserID, &lt.Username, &lt.Created, &lt.UsedAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.LinkToken{}, fmt.Errorf("token not found or already used")
+		}
+		return domain.LinkToken{}, fmt.Errorf("postgres: consume link token: %w", err)
+	}
+	return lt, nil
+}

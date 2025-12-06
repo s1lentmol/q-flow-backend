@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: qflow-auth-db
+    container_name: qflow-db
     env_file:
       - .env
     environment:
@@ -82,6 +82,7 @@ services:
       ENV_DB_DATABASE: ${POSTGRES_DB}
       ENV_GRPC_PORT: ${NOTIFICATION_GRPC_PORT}
       ENV_TELEGRAM_TOKEN: ${ENV_TELEGRAM_TOKEN:-}
+      ENV_TELEGRAM_BOT_NAME: ${ENV_TELEGRAM_BOT_NAME:-}
     ports:
       - "${NOTIFICATION_GRPC_PORT}:44046"
     depends_on:
@@ -98,12 +99,12 @@ services:
       - .env
     environment:
       ENV_ENV: ${ENV_ENV}
-      ENV_HTTP_PORT: ${API_HTTP_PORT}
-      ENV_GRPC_AUTH_ADDRESS: ${AUTH_GRPC_ADDR}
-      ENV_GRPC_QUEUE_ADDRESS: ${QUEUE_GRPC_ADDR}
-      ENV_GRPC_NOTIFICATION_ADDRESS: ${NOTIFICATION_GRPC_ADDR}
-      ENV_APP_ID: ${APP_ID}
-      ENV_APP_SECRET: ${APP_SECRET}
+      ENV_HTTP_PORT: ${API_HTTP_PORT:-8080}
+      ENV_GRPC_AUTH_ADDRESS: ${AUTH_GRPC_ADDR:-auth:44044}
+      ENV_GRPC_QUEUE_ADDRESS: ${QUEUE_GRPC_ADDR:-queue:44045}
+      ENV_GRPC_NOTIFICATION_ADDRESS: ${NOTIFICATION_GRPC_ADDR:-notification:44046}
+      ENV_APP_ID: ${APP_ID:-1}
+      ENV_APP_SECRET: ${APP_SECRET:-supersecret}
     ports:
       - "${API_HTTP_PORT}:8080"
     depends_on:

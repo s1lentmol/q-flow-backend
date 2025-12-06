@@ -2,6 +2,7 @@
 
 FROM golang:1.25 AS builder
 WORKDIR /app
+ENV GOWORK=off
 
 COPY go.work go.work.sum ./
 COPY services/api-gateway/go.mod services/api-gateway/go.sum ./services/api-gateway/

@@ -17,6 +17,8 @@ import (
 type Notification interface {
 	SetContact(ctx context.Context, userID int64, username, chatID string) error
 	NotifyPositionSoon(ctx context.Context, userID int64, queueTitle string, position int32) error
+	CreateLinkToken(ctx context.Context, userID int64, username string) (token string, link string, err error)
+	BindByToken(ctx context.Context, token, chatID, username string) error
 }
 
 type serverAPI struct {
@@ -66,6 +68,49 @@ func (s *serverAPI) SetContact(ctx context.Context, req *notificationv1.SetConta
 	}
 
 	return &notificationv1.SetContactResponse{}, nil
+}
+
+func (s *serverAPI) CreateLinkToken(ctx context.Context, req *notificationv1.CreateLinkTokenRequest) (*notificationv1.CreateLinkTokenResponse, error) {
+	input := struct {
+		UserID   int64  `validate:"required,gt=0" json:"user_id"`
+		Username string `json:"telegram_username"`
+	}{
+		UserID:   req.GetUserId(),
+		Username: req.GetTelegramUsername(),
+	}
+	if err := validate.Struct(input); err != nil {
+		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
+	}
+
+	token, link, err := s.notif.CreateLinkToken(ctx, req.GetUserId(), req.GetTelegramUsername())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create link token")
+	}
+	return &notificationv1.CreateLinkTokenResponse{
+		Token: token,
+		Link:  link,
+	}, nil
+}
+
+func (s *serverAPI) BindByToken(ctx context.Context, req *notificationv1.BindByTokenRequest) (*notificationv1.BindByTokenResponse, error) {
+	input := struct {
+		Token    string `validate:"required" json:"token"`
+		ChatID   string `validate:"required" json:"chat_id"`
+		Username string `json:"telegram_username"`
+	}{
+		Token:    req.GetToken(),
+		ChatID:   req.GetChatId(),
+		Username: req.GetTelegramUsername(),
+	}
+	if err := validate.Struct(input); err != nil {
+		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
+	}
+
+	if err := s.notif.BindByToken(ctx, req.GetToken(), req.GetChatId(), req.GetTelegramUsername()); err != nil {
+		return nil, status.Error(codes.Internal, "failed to bind token")
+	}
+
+	return &notificationv1.BindByTokenResponse{}, nil
 }
 
 var validate = func() *validator.Validate {

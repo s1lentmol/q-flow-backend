@@ -1,5 +1,6 @@
 FROM golang:1.25 AS builder
 WORKDIR /app
+ENV GOWORK=off
 
 COPY go.work go.work.sum ./
 COPY services/queue/go.mod services/queue/go.sum ./services/queue/

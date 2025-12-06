@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -53,11 +55,13 @@ func New(log *slog.Logger, auth *authclient.Client, queue *queueclient.Client, n
 func (s *Server) routes(appSecret string) {
 	s.app.Post("/auth/register", s.handleRegister)
 	s.app.Post("/auth/login", s.handleLogin)
+	s.app.Post("/telegram/webhook", s.handleTelegramWebhook)
 
 	// Protected routes
 	authMW := middleware.Auth(appSecret)
 
 	s.app.Post("/profile/contact", authMW, s.handleSetContact)
+	s.app.Post("/profile/contact/link", authMW, s.handleCreateLinkToken)
 
 	s.app.Get("/queues", authMW, s.handleListQueues)
 	s.app.Post("/queues", authMW, s.handleCreateQueue)
@@ -114,6 +118,22 @@ type (
 		GroupCode string `json:"group_code" validate:"required"`
 		UserID    int64  `json:"user_id" validate:"required,gt=0"`
 	}
+
+	linkReq struct {
+		TelegramUsername string `json:"telegram_username"`
+	}
+
+	telegramUpdate struct {
+		Message *struct {
+			Text string `json:"text"`
+			Chat struct {
+				ID int64 `json:"id"`
+			} `json:"chat"`
+			From *struct {
+				Username string `json:"username"`
+			} `json:"from"`
+		} `json:"message"`
+	}
 )
 
 func (s *Server) handleRegister(c *fiber.Ctx) error {
@@ -161,6 +181,45 @@ func (s *Server) handleSetContact(c *fiber.Ctx) error {
 		return s.mapError(err)
 	}
 	return c.JSON(fiber.Map{"data": "ok"})
+}
+
+func (s *Server) handleCreateLinkToken(c *fiber.Ctx) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
+	}
+	var req linkReq
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+	}
+	token, link, err := s.notif.CreateLinkToken(c.Context(), user.ID, req.TelegramUsername)
+	if err != nil {
+		return s.mapError(err)
+	}
+	return c.JSON(fiber.Map{"data": fiber.Map{"token": token, "link": link}})
+}
+
+func (s *Server) handleTelegramWebhook(c *fiber.Ctx) error {
+	var upd telegramUpdate
+	if err := c.BodyParser(&upd); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid update")
+	}
+	if upd.Message == nil {
+		return c.SendStatus(fiber.StatusOK)
+	}
+	token := extractStartToken(upd.Message.Text)
+	if token == "" {
+		return c.SendStatus(fiber.StatusOK)
+	}
+	chatID := fmt.Sprintf("%d", upd.Message.Chat.ID)
+	username := ""
+	if upd.Message.From != nil {
+		username = upd.Message.From.Username
+	}
+	if err := s.notif.BindByToken(c.Context(), token, chatID, username); err != nil {
+		s.log.Warn("failed to bind telegram token", slog.Any("err", err))
+	}
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (s *Server) handleListQueues(c *fiber.Ctx) error {
@@ -387,4 +446,21 @@ func parseMode(mode string) queuev1.QueueMode {
 	default:
 		return queuev1.QueueMode_QUEUE_MODE_LIVE
 	}
+}
+
+func extractStartToken(text string) string {
+	if text == "" {
+		return ""
+	}
+	parts := strings.Fields(text)
+	if len(parts) == 0 {
+		return ""
+	}
+	if parts[0] != "/start" {
+		return ""
+	}
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[1]
 }

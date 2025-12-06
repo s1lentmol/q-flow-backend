@@ -26,7 +26,7 @@ func New(ctx context.Context, log *slog.Logger, cfg *config.Config) (*App, error
 		return nil, err
 	}
 
-	notifService := notification.New(log, store, cfg.Telegram.Token)
+	notifService := notification.New(log, store, cfg.Telegram.Token, cfg.Telegram.Bot)
 
 	grpcApp := grpcapp.New(log, notifService, cfg.GRPC.Port)
 

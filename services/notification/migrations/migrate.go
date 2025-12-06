@@ -31,6 +31,8 @@ func Migrate(url string) error {
 	}
 
 	goose.SetBaseFS(migrations)
+	// Separate goose version table to prevent conflicts with other services sharing DB.
+	goose.SetTableName("notification_goose_db_version")
 	if err = goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("cannot set migrations dialect: %w", err)
 	}
