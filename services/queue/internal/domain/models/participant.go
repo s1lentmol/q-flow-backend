@@ -8,5 +8,6 @@ type Participant struct {
 	UserID    int64
 	Position  int32
 	SlotTime  *time.Time
+	FullName  string
 	CreatedAt time.Time
 }

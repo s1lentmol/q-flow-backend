@@ -34,11 +34,11 @@ func (s *Storage) Close() {
 	s.pool.Close()
 }
 
-func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (int64, error) {
-	const query = `INSERT INTO users (email, pass_hash) VALUES ($1, $2) RETURNING id`
+func (s *Storage) SaveUser(ctx context.Context, email string, fullName string, passHash []byte) (int64, error) {
+	const query = `INSERT INTO users (email, full_name, pass_hash) VALUES ($1, $2, $3) RETURNING id`
 
 	var id int64
-	if err := s.pool.QueryRow(ctx, query, email, passHash).Scan(&id); err != nil {
+	if err := s.pool.QueryRow(ctx, query, email, fullName, passHash).Scan(&id); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
 			return 0, storage.ErrUserExists
@@ -50,10 +50,10 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 }
 
 func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
-	const query = `SELECT id, email, pass_hash FROM users WHERE email = $1`
+	const query = `SELECT id, email, full_name, pass_hash FROM users WHERE email = $1`
 
 	var user models.User
-	if err := s.pool.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.PassHash); err != nil {
+	if err := s.pool.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.FullName, &user.PassHash); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.User{}, storage.ErrUserNotFound
 		}

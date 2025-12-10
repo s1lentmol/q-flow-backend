@@ -14,6 +14,8 @@ service Queue {
   rpc RemoveParticipant (RemoveParticipantRequest) returns (RemoveParticipantResponse);
   rpc ArchiveQueue (ArchiveQueueRequest) returns (ArchiveQueueResponse);
   rpc DeleteQueue (DeleteQueueRequest) returns (DeleteQueueResponse);
+  rpc UpdateQueue (UpdateQueueRequest) returns (UpdateQueueResponse);
+  rpc AddParticipant (AddParticipantRequest) returns (AddParticipantResponse);
 }
 
 enum QueueMode {
@@ -49,6 +51,7 @@ message ParticipantDTO {
   int32 position = 4;
   int64 created_at = 5;
   string slot_time = 6;
+  string full_name = 7;
 }
 
 message ListQueuesRequest {
@@ -86,6 +89,7 @@ message JoinQueueRequest {
   int64 user_id = 2;
   string group_code = 3;
   string slot_time = 4; // RFC3339, required for slots mode
+  string user_name = 5;
 }
 
 message JoinQueueResponse {
@@ -134,3 +138,28 @@ message DeleteQueueRequest {
 }
 
 message DeleteQueueResponse {}
+
+message UpdateQueueRequest {
+  int64 queue_id = 1;
+  string group_code = 2;
+  int64 actor_id = 3; // owner
+  string title = 4;
+  string description = 5;
+}
+
+message UpdateQueueResponse {
+  QueueDTO queue = 1;
+}
+
+message AddParticipantRequest {
+  int64 queue_id = 1;
+  int64 user_id = 2; // participant to add
+  int64 actor_id = 3; // owner
+  string group_code = 4;
+  string slot_time = 5; // for slots mode
+  string user_name = 6;
+}
+
+message AddParticipantResponse {
+  int32 position = 1;
+}

@@ -241,6 +241,7 @@ type ParticipantDTO struct {
 	Position      int32                  `protobuf:"varint,4,opt,name=position,proto3" json:"position,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	SlotTime      string                 `protobuf:"bytes,6,opt,name=slot_time,json=slotTime,proto3" json:"slot_time,omitempty"`
+	FullName      string                 `protobuf:"bytes,7,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -313,6 +314,13 @@ func (x *ParticipantDTO) GetCreatedAt() int64 {
 func (x *ParticipantDTO) GetSlotTime() string {
 	if x != nil {
 		return x.SlotTime
+	}
+	return ""
+}
+
+func (x *ParticipantDTO) GetFullName() string {
+	if x != nil {
+		return x.FullName
 	}
 	return ""
 }
@@ -635,6 +643,7 @@ type JoinQueueRequest struct {
 	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	GroupCode     string                 `protobuf:"bytes,3,opt,name=group_code,json=groupCode,proto3" json:"group_code,omitempty"`
 	SlotTime      string                 `protobuf:"bytes,4,opt,name=slot_time,json=slotTime,proto3" json:"slot_time,omitempty"` // RFC3339, required for slots mode
+	UserName      string                 `protobuf:"bytes,5,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -693,6 +702,13 @@ func (x *JoinQueueRequest) GetGroupCode() string {
 func (x *JoinQueueRequest) GetSlotTime() string {
 	if x != nil {
 		return x.SlotTime
+	}
+	return ""
+}
+
+func (x *JoinQueueRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
 	}
 	return ""
 }
@@ -1237,6 +1253,254 @@ func (*DeleteQueueResponse) Descriptor() ([]byte, []int) {
 	return file_queue_queue_proto_rawDescGZIP(), []int{19}
 }
 
+type UpdateQueueRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QueueId       int64                  `protobuf:"varint,1,opt,name=queue_id,json=queueId,proto3" json:"queue_id,omitempty"`
+	GroupCode     string                 `protobuf:"bytes,2,opt,name=group_code,json=groupCode,proto3" json:"group_code,omitempty"`
+	ActorId       int64                  `protobuf:"varint,3,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"` // owner
+	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateQueueRequest) Reset() {
+	*x = UpdateQueueRequest{}
+	mi := &file_queue_queue_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateQueueRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateQueueRequest) ProtoMessage() {}
+
+func (x *UpdateQueueRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_queue_queue_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateQueueRequest.ProtoReflect.Descriptor instead.
+func (*UpdateQueueRequest) Descriptor() ([]byte, []int) {
+	return file_queue_queue_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *UpdateQueueRequest) GetQueueId() int64 {
+	if x != nil {
+		return x.QueueId
+	}
+	return 0
+}
+
+func (x *UpdateQueueRequest) GetGroupCode() string {
+	if x != nil {
+		return x.GroupCode
+	}
+	return ""
+}
+
+func (x *UpdateQueueRequest) GetActorId() int64 {
+	if x != nil {
+		return x.ActorId
+	}
+	return 0
+}
+
+func (x *UpdateQueueRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UpdateQueueRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+type UpdateQueueResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Queue         *QueueDTO              `protobuf:"bytes,1,opt,name=queue,proto3" json:"queue,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateQueueResponse) Reset() {
+	*x = UpdateQueueResponse{}
+	mi := &file_queue_queue_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateQueueResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateQueueResponse) ProtoMessage() {}
+
+func (x *UpdateQueueResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_queue_queue_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateQueueResponse.ProtoReflect.Descriptor instead.
+func (*UpdateQueueResponse) Descriptor() ([]byte, []int) {
+	return file_queue_queue_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *UpdateQueueResponse) GetQueue() *QueueDTO {
+	if x != nil {
+		return x.Queue
+	}
+	return nil
+}
+
+type AddParticipantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QueueId       int64                  `protobuf:"varint,1,opt,name=queue_id,json=queueId,proto3" json:"queue_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`    // participant to add
+	ActorId       int64                  `protobuf:"varint,3,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"` // owner
+	GroupCode     string                 `protobuf:"bytes,4,opt,name=group_code,json=groupCode,proto3" json:"group_code,omitempty"`
+	SlotTime      string                 `protobuf:"bytes,5,opt,name=slot_time,json=slotTime,proto3" json:"slot_time,omitempty"` // for slots mode
+	UserName      string                 `protobuf:"bytes,6,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddParticipantRequest) Reset() {
+	*x = AddParticipantRequest{}
+	mi := &file_queue_queue_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddParticipantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddParticipantRequest) ProtoMessage() {}
+
+func (x *AddParticipantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_queue_queue_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddParticipantRequest.ProtoReflect.Descriptor instead.
+func (*AddParticipantRequest) Descriptor() ([]byte, []int) {
+	return file_queue_queue_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *AddParticipantRequest) GetQueueId() int64 {
+	if x != nil {
+		return x.QueueId
+	}
+	return 0
+}
+
+func (x *AddParticipantRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *AddParticipantRequest) GetActorId() int64 {
+	if x != nil {
+		return x.ActorId
+	}
+	return 0
+}
+
+func (x *AddParticipantRequest) GetGroupCode() string {
+	if x != nil {
+		return x.GroupCode
+	}
+	return ""
+}
+
+func (x *AddParticipantRequest) GetSlotTime() string {
+	if x != nil {
+		return x.SlotTime
+	}
+	return ""
+}
+
+func (x *AddParticipantRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+type AddParticipantResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Position      int32                  `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddParticipantResponse) Reset() {
+	*x = AddParticipantResponse{}
+	mi := &file_queue_queue_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddParticipantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddParticipantResponse) ProtoMessage() {}
+
+func (x *AddParticipantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_queue_queue_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddParticipantResponse.ProtoReflect.Descriptor instead.
+func (*AddParticipantResponse) Descriptor() ([]byte, []int) {
+	return file_queue_queue_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *AddParticipantResponse) GetPosition() int32 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
 var File_queue_queue_proto protoreflect.FileDescriptor
 
 const file_queue_queue_proto_rawDesc = "" +
@@ -1254,7 +1518,7 @@ const file_queue_queue_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\x03R\tupdatedAt\"\xac\x01\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\"\xc9\x01\n" +
 	"\x0eParticipantDTO\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bqueue_id\x18\x02 \x01(\x03R\aqueueId\x12\x17\n" +
@@ -1262,7 +1526,8 @@ const file_queue_queue_proto_rawDesc = "" +
 	"\bposition\x18\x04 \x01(\x05R\bposition\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\x03R\tcreatedAt\x12\x1b\n" +
-	"\tslot_time\x18\x06 \x01(\tR\bslotTime\"2\n" +
+	"\tslot_time\x18\x06 \x01(\tR\bslotTime\x12\x1b\n" +
+	"\tfull_name\x18\a \x01(\tR\bfullName\"2\n" +
 	"\x11ListQueuesRequest\x12\x1d\n" +
 	"\n" +
 	"group_code\x18\x01 \x01(\tR\tgroupCode\"=\n" +
@@ -1283,13 +1548,14 @@ const file_queue_queue_proto_rawDesc = "" +
 	"group_code\x18\x02 \x01(\tR\tgroupCode\"t\n" +
 	"\x10GetQueueResponse\x12%\n" +
 	"\x05queue\x18\x01 \x01(\v2\x0f.queue.QueueDTOR\x05queue\x129\n" +
-	"\fparticipants\x18\x02 \x03(\v2\x15.queue.ParticipantDTOR\fparticipants\"\x82\x01\n" +
+	"\fparticipants\x18\x02 \x03(\v2\x15.queue.ParticipantDTOR\fparticipants\"\x9f\x01\n" +
 	"\x10JoinQueueRequest\x12\x19\n" +
 	"\bqueue_id\x18\x01 \x01(\x03R\aqueueId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x1d\n" +
 	"\n" +
 	"group_code\x18\x03 \x01(\tR\tgroupCode\x12\x1b\n" +
-	"\tslot_time\x18\x04 \x01(\tR\bslotTime\"/\n" +
+	"\tslot_time\x18\x04 \x01(\tR\bslotTime\x12\x1b\n" +
+	"\tuser_name\x18\x05 \x01(\tR\buserName\"/\n" +
 	"\x11JoinQueueResponse\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\x05R\bposition\"f\n" +
 	"\x11LeaveQueueRequest\x12\x19\n" +
@@ -1323,7 +1589,26 @@ const file_queue_queue_proto_rawDesc = "" +
 	"\n" +
 	"group_code\x18\x02 \x01(\tR\tgroupCode\x12\x19\n" +
 	"\bactor_id\x18\x03 \x01(\x03R\aactorId\"\x15\n" +
-	"\x13DeleteQueueResponse*\x81\x01\n" +
+	"\x13DeleteQueueResponse\"\xa1\x01\n" +
+	"\x12UpdateQueueRequest\x12\x19\n" +
+	"\bqueue_id\x18\x01 \x01(\x03R\aqueueId\x12\x1d\n" +
+	"\n" +
+	"group_code\x18\x02 \x01(\tR\tgroupCode\x12\x19\n" +
+	"\bactor_id\x18\x03 \x01(\x03R\aactorId\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"<\n" +
+	"\x13UpdateQueueResponse\x12%\n" +
+	"\x05queue\x18\x01 \x01(\v2\x0f.queue.QueueDTOR\x05queue\"\xbf\x01\n" +
+	"\x15AddParticipantRequest\x12\x19\n" +
+	"\bqueue_id\x18\x01 \x01(\x03R\aqueueId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x19\n" +
+	"\bactor_id\x18\x03 \x01(\x03R\aactorId\x12\x1d\n" +
+	"\n" +
+	"group_code\x18\x04 \x01(\tR\tgroupCode\x12\x1b\n" +
+	"\tslot_time\x18\x05 \x01(\tR\bslotTime\x12\x1b\n" +
+	"\tuser_name\x18\x06 \x01(\tR\buserName\"4\n" +
+	"\x16AddParticipantResponse\x12\x1a\n" +
+	"\bposition\x18\x01 \x01(\x05R\bposition*\x81\x01\n" +
 	"\tQueueMode\x12\x1a\n" +
 	"\x16QUEUE_MODE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fQUEUE_MODE_LIVE\x10\x01\x12\x16\n" +
@@ -1333,7 +1618,7 @@ const file_queue_queue_proto_rawDesc = "" +
 	"\vQueueStatus\x12\x1c\n" +
 	"\x18QUEUE_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13QUEUE_STATUS_ACTIVE\x10\x01\x12\x19\n" +
-	"\x15QUEUE_STATUS_ARCHIVED\x10\x022\x80\x05\n" +
+	"\x15QUEUE_STATUS_ARCHIVED\x10\x022\x95\x06\n" +
 	"\x05Queue\x12A\n" +
 	"\n" +
 	"ListQueues\x12\x18.queue.ListQueuesRequest\x1a\x19.queue.ListQueuesResponse\x12D\n" +
@@ -1345,7 +1630,9 @@ const file_queue_queue_proto_rawDesc = "" +
 	"\fAdvanceQueue\x12\x1a.queue.AdvanceQueueRequest\x1a\x1b.queue.AdvanceQueueResponse\x12V\n" +
 	"\x11RemoveParticipant\x12\x1f.queue.RemoveParticipantRequest\x1a .queue.RemoveParticipantResponse\x12G\n" +
 	"\fArchiveQueue\x12\x1a.queue.ArchiveQueueRequest\x1a\x1b.queue.ArchiveQueueResponse\x12D\n" +
-	"\vDeleteQueue\x12\x19.queue.DeleteQueueRequest\x1a\x1a.queue.DeleteQueueResponseBAZ?github.com/s1lentmol/q-flow-backend/protos/gen/go/queue;queuev1b\x06proto3"
+	"\vDeleteQueue\x12\x19.queue.DeleteQueueRequest\x1a\x1a.queue.DeleteQueueResponse\x12D\n" +
+	"\vUpdateQueue\x12\x19.queue.UpdateQueueRequest\x1a\x1a.queue.UpdateQueueResponse\x12M\n" +
+	"\x0eAddParticipant\x12\x1c.queue.AddParticipantRequest\x1a\x1d.queue.AddParticipantResponseBAZ?github.com/s1lentmol/q-flow-backend/protos/gen/go/queue;queuev1b\x06proto3"
 
 var (
 	file_queue_queue_proto_rawDescOnce sync.Once
@@ -1360,7 +1647,7 @@ func file_queue_queue_proto_rawDescGZIP() []byte {
 }
 
 var file_queue_queue_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_queue_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_queue_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_queue_queue_proto_goTypes = []any{
 	(QueueMode)(0),                    // 0: queue.QueueMode
 	(QueueStatus)(0),                  // 1: queue.QueueStatus
@@ -1384,6 +1671,10 @@ var file_queue_queue_proto_goTypes = []any{
 	(*ArchiveQueueResponse)(nil),      // 19: queue.ArchiveQueueResponse
 	(*DeleteQueueRequest)(nil),        // 20: queue.DeleteQueueRequest
 	(*DeleteQueueResponse)(nil),       // 21: queue.DeleteQueueResponse
+	(*UpdateQueueRequest)(nil),        // 22: queue.UpdateQueueRequest
+	(*UpdateQueueResponse)(nil),       // 23: queue.UpdateQueueResponse
+	(*AddParticipantRequest)(nil),     // 24: queue.AddParticipantRequest
+	(*AddParticipantResponse)(nil),    // 25: queue.AddParticipantResponse
 }
 var file_queue_queue_proto_depIdxs = []int32{
 	0,  // 0: queue.QueueDTO.mode:type_name -> queue.QueueMode
@@ -1394,29 +1685,34 @@ var file_queue_queue_proto_depIdxs = []int32{
 	2,  // 5: queue.GetQueueResponse.queue:type_name -> queue.QueueDTO
 	3,  // 6: queue.GetQueueResponse.participants:type_name -> queue.ParticipantDTO
 	3,  // 7: queue.AdvanceQueueResponse.removed:type_name -> queue.ParticipantDTO
-	4,  // 8: queue.Queue.ListQueues:input_type -> queue.ListQueuesRequest
-	6,  // 9: queue.Queue.CreateQueue:input_type -> queue.CreateQueueRequest
-	8,  // 10: queue.Queue.GetQueue:input_type -> queue.GetQueueRequest
-	10, // 11: queue.Queue.JoinQueue:input_type -> queue.JoinQueueRequest
-	12, // 12: queue.Queue.LeaveQueue:input_type -> queue.LeaveQueueRequest
-	14, // 13: queue.Queue.AdvanceQueue:input_type -> queue.AdvanceQueueRequest
-	16, // 14: queue.Queue.RemoveParticipant:input_type -> queue.RemoveParticipantRequest
-	18, // 15: queue.Queue.ArchiveQueue:input_type -> queue.ArchiveQueueRequest
-	20, // 16: queue.Queue.DeleteQueue:input_type -> queue.DeleteQueueRequest
-	5,  // 17: queue.Queue.ListQueues:output_type -> queue.ListQueuesResponse
-	7,  // 18: queue.Queue.CreateQueue:output_type -> queue.CreateQueueResponse
-	9,  // 19: queue.Queue.GetQueue:output_type -> queue.GetQueueResponse
-	11, // 20: queue.Queue.JoinQueue:output_type -> queue.JoinQueueResponse
-	13, // 21: queue.Queue.LeaveQueue:output_type -> queue.LeaveQueueResponse
-	15, // 22: queue.Queue.AdvanceQueue:output_type -> queue.AdvanceQueueResponse
-	17, // 23: queue.Queue.RemoveParticipant:output_type -> queue.RemoveParticipantResponse
-	19, // 24: queue.Queue.ArchiveQueue:output_type -> queue.ArchiveQueueResponse
-	21, // 25: queue.Queue.DeleteQueue:output_type -> queue.DeleteQueueResponse
-	17, // [17:26] is the sub-list for method output_type
-	8,  // [8:17] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	2,  // 8: queue.UpdateQueueResponse.queue:type_name -> queue.QueueDTO
+	4,  // 9: queue.Queue.ListQueues:input_type -> queue.ListQueuesRequest
+	6,  // 10: queue.Queue.CreateQueue:input_type -> queue.CreateQueueRequest
+	8,  // 11: queue.Queue.GetQueue:input_type -> queue.GetQueueRequest
+	10, // 12: queue.Queue.JoinQueue:input_type -> queue.JoinQueueRequest
+	12, // 13: queue.Queue.LeaveQueue:input_type -> queue.LeaveQueueRequest
+	14, // 14: queue.Queue.AdvanceQueue:input_type -> queue.AdvanceQueueRequest
+	16, // 15: queue.Queue.RemoveParticipant:input_type -> queue.RemoveParticipantRequest
+	18, // 16: queue.Queue.ArchiveQueue:input_type -> queue.ArchiveQueueRequest
+	20, // 17: queue.Queue.DeleteQueue:input_type -> queue.DeleteQueueRequest
+	22, // 18: queue.Queue.UpdateQueue:input_type -> queue.UpdateQueueRequest
+	24, // 19: queue.Queue.AddParticipant:input_type -> queue.AddParticipantRequest
+	5,  // 20: queue.Queue.ListQueues:output_type -> queue.ListQueuesResponse
+	7,  // 21: queue.Queue.CreateQueue:output_type -> queue.CreateQueueResponse
+	9,  // 22: queue.Queue.GetQueue:output_type -> queue.GetQueueResponse
+	11, // 23: queue.Queue.JoinQueue:output_type -> queue.JoinQueueResponse
+	13, // 24: queue.Queue.LeaveQueue:output_type -> queue.LeaveQueueResponse
+	15, // 25: queue.Queue.AdvanceQueue:output_type -> queue.AdvanceQueueResponse
+	17, // 26: queue.Queue.RemoveParticipant:output_type -> queue.RemoveParticipantResponse
+	19, // 27: queue.Queue.ArchiveQueue:output_type -> queue.ArchiveQueueResponse
+	21, // 28: queue.Queue.DeleteQueue:output_type -> queue.DeleteQueueResponse
+	23, // 29: queue.Queue.UpdateQueue:output_type -> queue.UpdateQueueResponse
+	25, // 30: queue.Queue.AddParticipant:output_type -> queue.AddParticipantResponse
+	20, // [20:31] is the sub-list for method output_type
+	9,  // [9:20] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_queue_queue_proto_init() }
@@ -1430,7 +1726,7 @@ func file_queue_queue_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_queue_queue_proto_rawDesc), len(file_queue_queue_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   20,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

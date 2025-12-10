@@ -24,6 +24,7 @@ type Auth interface {
 
 	RegisterNewUser(ctx context.Context,
 		email string,
+		fullName string,
 		password string,
 	) (userID int64, err error)
 
@@ -72,9 +73,11 @@ func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest,
 ) (*authv1.RegisterResponse, error) {
 	input := struct {
 		Email    string `validate:"required,email" json:"email"`
+		FullName string `validate:"required" json:"full_name"`
 		Password string `validate:"required" json:"password"`
 	}{
 		Email:    req.GetEmail(),
+		FullName: req.GetFullName(),
 		Password: req.GetPassword(),
 	}
 
@@ -82,7 +85,7 @@ func (s *serverAPI) Register(ctx context.Context, req *authv1.RegisterRequest,
 		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
 	}
 
-	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
+	userID, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetFullName(), req.GetPassword())
 	if err != nil {
 		return nil, mapAuthErr(err, "failed to register user")
 	}

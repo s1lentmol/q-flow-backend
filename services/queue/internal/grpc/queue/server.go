@@ -22,12 +22,14 @@ type Queue interface {
 	ListQueues(ctx context.Context, group string) ([]models.Queue, error)
 	CreateQueue(ctx context.Context, title, description, group string, mode models.QueueMode, ownerID int64) (models.Queue, error)
 	GetQueue(ctx context.Context, queueID int64, group string) (models.Queue, []models.Participant, error)
-	JoinQueue(ctx context.Context, queueID, userID int64, group string, slotTime string) (int32, error)
+	JoinQueue(ctx context.Context, queueID, userID int64, fullName string, group string, slotTime string) (int32, error)
 	LeaveQueue(ctx context.Context, queueID, userID int64, group string) error
 	AdvanceQueue(ctx context.Context, queueID int64, actorID int64, group string) (models.Participant, error)
 	RemoveParticipant(ctx context.Context, queueID int64, userID int64, actorID int64, group string) error
 	ArchiveQueue(ctx context.Context, queueID int64, actorID int64, group string) error
 	DeleteQueue(ctx context.Context, queueID int64, actorID int64, group string) error
+	UpdateQueue(ctx context.Context, queueID int64, actorID int64, group string, title string, description string) (models.Queue, error)
+	AddParticipant(ctx context.Context, queueID int64, userID int64, fullName string, actorID int64, group string, slotTime string) (int32, error)
 }
 
 type serverAPI struct {
@@ -116,16 +118,18 @@ func (s *serverAPI) JoinQueue(ctx context.Context, req *queuev1.JoinQueueRequest
 		QueueID   int64  `validate:"required,gt=0" json:"queue_id"`
 		UserID    int64  `validate:"required,gt=0" json:"user_id"`
 		GroupCode string `validate:"required" json:"group_code"`
+		UserName  string `validate:"required" json:"user_name"`
 	}{
 		QueueID:   req.GetQueueId(),
 		UserID:    req.GetUserId(),
 		GroupCode: req.GetGroupCode(),
+		UserName:  req.GetUserName(),
 	}
 	if err := validate.Struct(input); err != nil {
 		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
 	}
 
-	position, err := s.queue.JoinQueue(ctx, req.GetQueueId(), req.GetUserId(), req.GetGroupCode(), req.GetSlotTime())
+	position, err := s.queue.JoinQueue(ctx, req.GetQueueId(), req.GetUserId(), req.GetUserName(), req.GetGroupCode(), req.GetSlotTime())
 	if err != nil {
 		return nil, mapErr(err, "failed to join queue")
 	}
@@ -241,6 +245,54 @@ func (s *serverAPI) DeleteQueue(ctx context.Context, req *queuev1.DeleteQueueReq
 	return &queuev1.DeleteQueueResponse{}, nil
 }
 
+func (s *serverAPI) UpdateQueue(ctx context.Context, req *queuev1.UpdateQueueRequest) (*queuev1.UpdateQueueResponse, error) {
+	input := struct {
+		QueueID   int64  `validate:"required,gt=0" json:"queue_id"`
+		GroupCode string `validate:"required" json:"group_code"`
+		ActorID   int64  `validate:"required,gt=0" json:"actor_id"`
+	}{
+		QueueID:   req.GetQueueId(),
+		GroupCode: req.GetGroupCode(),
+		ActorID:   req.GetActorId(),
+	}
+	if err := validate.Struct(input); err != nil {
+		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
+	}
+
+	q, err := s.queue.UpdateQueue(ctx, req.GetQueueId(), req.GetActorId(), req.GetGroupCode(), req.GetTitle(), req.GetDescription())
+	if err != nil {
+		return nil, mapErr(err, "failed to update queue")
+	}
+
+	return &queuev1.UpdateQueueResponse{Queue: toQueueDTO(q)}, nil
+}
+
+func (s *serverAPI) AddParticipant(ctx context.Context, req *queuev1.AddParticipantRequest) (*queuev1.AddParticipantResponse, error) {
+	input := struct {
+		QueueID   int64  `validate:"required,gt=0" json:"queue_id"`
+		UserID    int64  `validate:"required,gt=0" json:"user_id"`
+		ActorID   int64  `validate:"required,gt=0" json:"actor_id"`
+		GroupCode string `validate:"required" json:"group_code"`
+		UserName  string `json:"user_name"`
+	}{
+		QueueID:   req.GetQueueId(),
+		UserID:    req.GetUserId(),
+		ActorID:   req.GetActorId(),
+		GroupCode: req.GetGroupCode(),
+		UserName:  req.GetUserName(),
+	}
+	if err := validate.Struct(input); err != nil {
+		return nil, status.Error(codes.InvalidArgument, formatValidationError(err))
+	}
+
+	position, err := s.queue.AddParticipant(ctx, req.GetQueueId(), req.GetUserId(), req.GetUserName(), req.GetActorId(), req.GetGroupCode(), req.GetSlotTime())
+	if err != nil {
+		return nil, mapErr(err, "failed to add participant")
+	}
+
+	return &queuev1.AddParticipantResponse{Position: position}, nil
+}
+
 var validate = func() *validator.Validate {
 	v := validator.New(validator.WithRequiredStructEnabled())
 	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -285,6 +337,7 @@ func toParticipantDTO(p models.Participant) *queuev1.ParticipantDTO {
 		QueueId:   p.QueueID,
 		UserId:    p.UserID,
 		Position:  p.Position,
+		FullName:  p.FullName,
 		CreatedAt: p.CreatedAt.Unix(),
 	}
 	if p.SlotTime != nil {

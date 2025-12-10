@@ -44,7 +44,8 @@ ON CONFLICT (user_id) DO UPDATE SET telegram_username = EXCLUDED.telegram_userna
 }
 
 func (s *Storage) GetContact(ctx context.Context, userID int64) (domain.Contact, error) {
-	const query = `SELECT user_id, telegram_username, chat_id, updated_at FROM user_contacts WHERE user_id = $1`
+	// COALESCE avoids scan errors when columns are NULL.
+	const query = `SELECT user_id, COALESCE(telegram_username,''), COALESCE(chat_id,''), updated_at FROM user_contacts WHERE user_id = $1`
 	var c domain.Contact
 	if err := s.pool.QueryRow(ctx, query, userID).Scan(&c.UserID, &c.Username, &c.ChatID, &c.Updated); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -11,6 +11,7 @@ type UserContext struct {
 	ID    int64
 	Email string
 	AppID int
+	Name  string
 }
 
 func Auth(secret string) fiber.Handler {
@@ -42,11 +43,13 @@ func Auth(secret string) fiber.Handler {
 		uid, _ := claims["uid"].(float64)
 		email, _ := claims["email"].(string)
 		appID, _ := claims["app_id"].(float64)
+		name, _ := claims["name"].(string)
 
 		c.Locals("user", &UserContext{
 			ID:    int64(uid),
 			Email: email,
 			AppID: int(appID),
+			Name:  name,
 		})
 
 		return c.Next()

@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -66,7 +68,9 @@ func (s *Server) routes(appSecret string) {
 	s.app.Get("/queues", authMW, s.handleListQueues)
 	s.app.Post("/queues", authMW, s.handleCreateQueue)
 	s.app.Get("/queues/:id", authMW, s.handleGetQueue)
+	s.app.Put("/queues/:id", authMW, s.handleUpdateQueue)
 	s.app.Post("/queues/:id/join", authMW, s.handleJoinQueue)
+	s.app.Post("/queues/:id/add", authMW, s.handleAddParticipant)
 	s.app.Post("/queues/:id/leave", authMW, s.handleLeaveQueue)
 	s.app.Post("/queues/:id/advance", authMW, s.handleAdvanceQueue)
 	s.app.Post("/queues/:id/remove", authMW, s.handleRemoveParticipant)
@@ -85,6 +89,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 type (
 	registerReq struct {
 		Email    string `json:"email" validate:"required,email"`
+		FullName string `json:"full_name" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
 
@@ -105,6 +110,12 @@ type (
 		GroupCode   string `json:"group_code" validate:"required"`
 	}
 
+	updateQueueReq struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		GroupCode   string `json:"group_code" validate:"required"`
+	}
+
 	groupReq struct {
 		GroupCode string `json:"group_code" validate:"required"`
 	}
@@ -117,6 +128,13 @@ type (
 	removeReq struct {
 		GroupCode string `json:"group_code" validate:"required"`
 		UserID    int64  `json:"user_id" validate:"required,gt=0"`
+	}
+
+	addReq struct {
+		GroupCode string `json:"group_code" validate:"required"`
+		UserID    int64  `json:"user_id" validate:"required,gt=0"`
+		UserName  string `json:"user_name"`
+		SlotTime  string `json:"slot_time"`
 	}
 
 	linkReq struct {
@@ -145,7 +163,7 @@ func (s *Server) handleRegister(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	id, err := s.auth.Register(c.Context(), req.Email, req.Password)
+	id, err := s.auth.Register(c.Context(), req.Email, req.FullName, req.Password)
 	if err != nil {
 		return s.mapError(err)
 	}
@@ -189,7 +207,7 @@ func (s *Server) handleCreateLinkToken(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
 	}
 	var req linkReq
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.BodyParser(&req); err != nil && !errors.Is(err, io.EOF) {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
 	}
 	token, link, err := s.notif.CreateLinkToken(c.Context(), user.ID, req.TelegramUsername)
@@ -277,6 +295,29 @@ func (s *Server) handleGetQueue(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": resp})
 }
 
+func (s *Server) handleUpdateQueue(c *fiber.Ctx) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+	var req updateQueueReq
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+	}
+	if err := s.validator.Struct(req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	dto, err := s.queue.Update(c.Context(), id, user.ID, req.GroupCode, req.Title, req.Description)
+	if err != nil {
+		return s.mapError(err)
+	}
+	return c.JSON(fiber.Map{"data": dto})
+}
+
 func (s *Server) handleJoinQueue(c *fiber.Ctx) error {
 	user := middleware.GetUser(c)
 	if user == nil {
@@ -293,7 +334,30 @@ func (s *Server) handleJoinQueue(c *fiber.Ctx) error {
 	if err := s.validator.Struct(req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
-	pos, err := s.queue.Join(c.Context(), id, user.ID, req.GroupCode, req.SlotTime)
+	pos, err := s.queue.Join(c.Context(), id, user.ID, user.Name, req.GroupCode, req.SlotTime)
+	if err != nil {
+		return s.mapError(err)
+	}
+	return c.JSON(fiber.Map{"data": fiber.Map{"position": pos}})
+}
+
+func (s *Server) handleAddParticipant(c *fiber.Ctx) error {
+	user := middleware.GetUser(c)
+	if user == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid id")
+	}
+	var req addReq
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+	}
+	if err := s.validator.Struct(req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	pos, err := s.queue.Add(c.Context(), id, req.UserID, user.ID, req.UserName, req.GroupCode, req.SlotTime)
 	if err != nil {
 		return s.mapError(err)
 	}

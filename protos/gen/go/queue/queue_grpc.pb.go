@@ -28,6 +28,8 @@ const (
 	Queue_RemoveParticipant_FullMethodName = "/queue.Queue/RemoveParticipant"
 	Queue_ArchiveQueue_FullMethodName      = "/queue.Queue/ArchiveQueue"
 	Queue_DeleteQueue_FullMethodName       = "/queue.Queue/DeleteQueue"
+	Queue_UpdateQueue_FullMethodName       = "/queue.Queue/UpdateQueue"
+	Queue_AddParticipant_FullMethodName    = "/queue.Queue/AddParticipant"
 )
 
 // QueueClient is the client API for Queue service.
@@ -43,6 +45,8 @@ type QueueClient interface {
 	RemoveParticipant(ctx context.Context, in *RemoveParticipantRequest, opts ...grpc.CallOption) (*RemoveParticipantResponse, error)
 	ArchiveQueue(ctx context.Context, in *ArchiveQueueRequest, opts ...grpc.CallOption) (*ArchiveQueueResponse, error)
 	DeleteQueue(ctx context.Context, in *DeleteQueueRequest, opts ...grpc.CallOption) (*DeleteQueueResponse, error)
+	UpdateQueue(ctx context.Context, in *UpdateQueueRequest, opts ...grpc.CallOption) (*UpdateQueueResponse, error)
+	AddParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*AddParticipantResponse, error)
 }
 
 type queueClient struct {
@@ -143,6 +147,26 @@ func (c *queueClient) DeleteQueue(ctx context.Context, in *DeleteQueueRequest, o
 	return out, nil
 }
 
+func (c *queueClient) UpdateQueue(ctx context.Context, in *UpdateQueueRequest, opts ...grpc.CallOption) (*UpdateQueueResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateQueueResponse)
+	err := c.cc.Invoke(ctx, Queue_UpdateQueue_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueClient) AddParticipant(ctx context.Context, in *AddParticipantRequest, opts ...grpc.CallOption) (*AddParticipantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddParticipantResponse)
+	err := c.cc.Invoke(ctx, Queue_AddParticipant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueueServer is the server API for Queue service.
 // All implementations must embed UnimplementedQueueServer
 // for forward compatibility.
@@ -156,6 +180,8 @@ type QueueServer interface {
 	RemoveParticipant(context.Context, *RemoveParticipantRequest) (*RemoveParticipantResponse, error)
 	ArchiveQueue(context.Context, *ArchiveQueueRequest) (*ArchiveQueueResponse, error)
 	DeleteQueue(context.Context, *DeleteQueueRequest) (*DeleteQueueResponse, error)
+	UpdateQueue(context.Context, *UpdateQueueRequest) (*UpdateQueueResponse, error)
+	AddParticipant(context.Context, *AddParticipantRequest) (*AddParticipantResponse, error)
 	mustEmbedUnimplementedQueueServer()
 }
 
@@ -192,6 +218,12 @@ func (UnimplementedQueueServer) ArchiveQueue(context.Context, *ArchiveQueueReque
 }
 func (UnimplementedQueueServer) DeleteQueue(context.Context, *DeleteQueueRequest) (*DeleteQueueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteQueue not implemented")
+}
+func (UnimplementedQueueServer) UpdateQueue(context.Context, *UpdateQueueRequest) (*UpdateQueueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateQueue not implemented")
+}
+func (UnimplementedQueueServer) AddParticipant(context.Context, *AddParticipantRequest) (*AddParticipantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddParticipant not implemented")
 }
 func (UnimplementedQueueServer) mustEmbedUnimplementedQueueServer() {}
 func (UnimplementedQueueServer) testEmbeddedByValue()               {}
@@ -376,6 +408,42 @@ func _Queue_DeleteQueue_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Queue_UpdateQueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateQueueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueServer).UpdateQueue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Queue_UpdateQueue_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueServer).UpdateQueue(ctx, req.(*UpdateQueueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Queue_AddParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddParticipantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueServer).AddParticipant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Queue_AddParticipant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueServer).AddParticipant(ctx, req.(*AddParticipantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Queue_ServiceDesc is the grpc.ServiceDesc for Queue service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +486,14 @@ var Queue_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteQueue",
 			Handler:    _Queue_DeleteQueue_Handler,
+		},
+		{
+			MethodName: "UpdateQueue",
+			Handler:    _Queue_UpdateQueue_Handler,
+		},
+		{
+			MethodName: "AddParticipant",
+			Handler:    _Queue_AddParticipant_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

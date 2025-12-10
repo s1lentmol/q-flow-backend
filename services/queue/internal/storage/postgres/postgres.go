@@ -76,7 +76,7 @@ VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`
 
 func (s *Storage) GetQueue(ctx context.Context, queueID int64) (models.Queue, []models.Participant, error) {
 	const queueQuery = `SELECT id, title, description, mode, status, group_code, owner_id, created_at, updated_at FROM queues WHERE id = $1`
-	const participantQuery = `SELECT id, queue_id, user_id, position, slot_time, created_at 
+	const participantQuery = `SELECT id, queue_id, user_id, position, slot_time, full_name, created_at 
 FROM queue_participants WHERE queue_id = $1 ORDER BY position ASC`
 
 	var q models.Queue
@@ -97,7 +97,7 @@ FROM queue_participants WHERE queue_id = $1 ORDER BY position ASC`
 	var participants []models.Participant
 	for rows.Next() {
 		var p models.Participant
-		if err := rows.Scan(&p.ID, &p.QueueID, &p.UserID, &p.Position, &p.SlotTime, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.QueueID, &p.UserID, &p.Position, &p.SlotTime, &p.FullName, &p.CreatedAt); err != nil {
 			return models.Queue{}, nil, fmt.Errorf("postgres: scan participant: %w", err)
 		}
 		participants = append(participants, p)
@@ -121,6 +121,19 @@ func (s *Storage) UpdateStatus(ctx context.Context, queueID int64, status models
 	return nil
 }
 
+func (s *Storage) UpdateQueue(ctx context.Context, queueID int64, title, description string) (models.Queue, error) {
+	const query = `UPDATE queues SET title = COALESCE(NULLIF($1, ''), title), description = $2, updated_at = NOW() WHERE id = $3 RETURNING id, title, description, mode, status, group_code, owner_id, created_at, updated_at`
+	var q models.Queue
+	if err := s.pool.QueryRow(ctx, query, title, description, queueID).
+		Scan(&q.ID, &q.Title, &q.Description, &q.Mode, &q.Status, &q.GroupCode, &q.OwnerID, &q.CreatedAt, &q.UpdatedAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Queue{}, storage.ErrQueueNotFound
+		}
+		return models.Queue{}, fmt.Errorf("postgres: update queue: %w", err)
+	}
+	return q, nil
+}
+
 func (s *Storage) DeleteQueue(ctx context.Context, queueID int64) error {
 	const query = `DELETE FROM queues WHERE id = $1`
 	cmd, err := s.pool.Exec(ctx, query, queueID)
@@ -133,7 +146,7 @@ func (s *Storage) DeleteQueue(ctx context.Context, queueID int64) error {
 	return nil
 }
 
-func (s *Storage) AddParticipant(ctx context.Context, queue models.Queue, userID int64, slotTime *time.Time) (int32, error) {
+func (s *Storage) AddParticipant(ctx context.Context, queue models.Queue, userID int64, fullName string, slotTime *time.Time) (int32, error) {
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return 0, fmt.Errorf("postgres: begin tx: %w", err)
@@ -179,8 +192,8 @@ func (s *Storage) AddParticipant(ctx context.Context, queue models.Queue, userID
 	}
 
 	if _, err := tx.Exec(ctx,
-		`INSERT INTO queue_participants (queue_id, user_id, position, slot_time) VALUES ($1, $2, $3, $4)`,
-		queue.ID, userID, position, slotTime); err != nil {
+		`INSERT INTO queue_participants (queue_id, user_id, position, slot_time, full_name) VALUES ($1, $2, $3, $4, $5)`,
+		queue.ID, userID, position, slotTime, fullName); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return 0, storage.ErrParticipantExists
@@ -236,9 +249,9 @@ func (s *Storage) Advance(ctx context.Context, queue models.Queue) (models.Parti
 	var p models.Participant
 	query := fmt.Sprintf(`DELETE FROM queue_participants WHERE id = (
 		SELECT id FROM queue_participants WHERE queue_id=$1 ORDER BY %s LIMIT 1
-	) RETURNING id, queue_id, user_id, position, slot_time, created_at`, orderClause)
+	) RETURNING id, queue_id, user_id, position, slot_time, full_name, created_at`, orderClause)
 
-	if err := tx.QueryRow(ctx, query, queue.ID).Scan(&p.ID, &p.QueueID, &p.UserID, &p.Position, &p.SlotTime, &p.CreatedAt); err != nil {
+	if err := tx.QueryRow(ctx, query, queue.ID).Scan(&p.ID, &p.QueueID, &p.UserID, &p.Position, &p.SlotTime, &p.FullName, &p.CreatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Participant{}, storage.ErrParticipantMissing
 		}

@@ -74,13 +74,16 @@ components:
           description: Unix timestamp seconds
     RegisterRequest:
       type: object
-      required: [email, password]
+      required: [email, password, full_name]
       properties:
         email:
           type: string
           format: email
         password:
           type: string
+        full_name:
+          type: string
+          description: "Полное имя пользователя"
     LoginRequest:
       type: object
       required: [email, password]
@@ -144,6 +147,29 @@ components:
         user_id:
           type: integer
           format: int64
+    UpdateQueueRequest:
+      type: object
+      required: [group_code]
+      properties:
+        group_code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+    AddParticipantRequest:
+      type: object
+      required: [group_code, user_id]
+      properties:
+        group_code:
+          type: string
+        user_id:
+          type: integer
+          format: int64
+        slot_time:
+          type: string
+          format: date-time
+          description: Required for slots mode
     QueueDetails:
       type: object
       properties:
@@ -376,6 +402,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    put:
+      tags: [Queues]
+      summary: Update queue (owner only)
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '200':
+          description: Updated queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Queue'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       tags: [Queues]
       summary: Delete queue
@@ -431,6 +490,43 @@ paths:
       responses:
         '200':
           description: Joined
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      position:
+                        type: integer
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /queues/{id}/add:
+    post:
+      tags: [Queues]
+      summary: Add participant manually (owner only)
+      security: [{BearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddParticipantRequest'
+      responses:
+        '200':
+          description: Added
           content:
             application/json:
               schema:

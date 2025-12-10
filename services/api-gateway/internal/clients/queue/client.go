@@ -37,10 +37,11 @@ func (c *Client) Get(ctx context.Context, queueID int64, group string) (*queuev1
 	return c.api.GetQueue(ctx, &queuev1.GetQueueRequest{QueueId: queueID, GroupCode: group})
 }
 
-func (c *Client) Join(ctx context.Context, queueID, userID int64, group string, slotTime string) (int32, error) {
+func (c *Client) Join(ctx context.Context, queueID, userID int64, fullName string, group string, slotTime string) (int32, error) {
 	resp, err := c.api.JoinQueue(ctx, &queuev1.JoinQueueRequest{
 		QueueId:   queueID,
 		UserId:    userID,
+		UserName:  fullName,
 		GroupCode: group,
 		SlotTime:  slotTime,
 	})
@@ -97,4 +98,33 @@ func (c *Client) Delete(ctx context.Context, queueID, actorID int64, group strin
 		ActorId:   actorID,
 	})
 	return err
+}
+
+func (c *Client) Update(ctx context.Context, queueID, actorID int64, group string, title, description string) (*queuev1.QueueDTO, error) {
+	resp, err := c.api.UpdateQueue(ctx, &queuev1.UpdateQueueRequest{
+		QueueId:     queueID,
+		GroupCode:   group,
+		ActorId:     actorID,
+		Title:       title,
+		Description: description,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetQueue(), nil
+}
+
+func (c *Client) Add(ctx context.Context, queueID, userID, actorID int64, fullName string, group string, slotTime string) (int32, error) {
+	resp, err := c.api.AddParticipant(ctx, &queuev1.AddParticipantRequest{
+		QueueId:   queueID,
+		UserId:    userID,
+		ActorId:   actorID,
+		GroupCode: group,
+		UserName:  fullName,
+		SlotTime:  slotTime,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return resp.GetPosition(), nil
 }

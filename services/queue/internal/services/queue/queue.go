@@ -22,8 +22,9 @@ type Storage interface {
 	CreateQueue(ctx context.Context, q models.Queue) (models.Queue, error)
 	GetQueue(ctx context.Context, queueID int64) (models.Queue, []models.Participant, error)
 	UpdateStatus(ctx context.Context, queueID int64, status models.QueueStatus) error
+	UpdateQueue(ctx context.Context, queueID int64, title, description string) (models.Queue, error)
 	DeleteQueue(ctx context.Context, queueID int64) error
-	AddParticipant(ctx context.Context, queue models.Queue, userID int64, slotTime *time.Time) (int32, error)
+	AddParticipant(ctx context.Context, queue models.Queue, userID int64, fullName string, slotTime *time.Time) (int32, error)
 	RemoveParticipant(ctx context.Context, queue models.Queue, userID int64) error
 	Advance(ctx context.Context, queue models.Queue) (models.Participant, error)
 }
@@ -69,7 +70,7 @@ func (s *Service) GetQueue(ctx context.Context, queueID int64, group string) (mo
 	return q, parts, nil
 }
 
-func (s *Service) JoinQueue(ctx context.Context, queueID, userID int64, group string, slotTimeStr string) (int32, error) {
+func (s *Service) JoinQueue(ctx context.Context, queueID, userID int64, fullName string, group string, slotTimeStr string) (int32, error) {
 	queue, _, err := s.storage.GetQueue(ctx, queueID)
 	if err != nil {
 		return 0, err
@@ -93,7 +94,7 @@ func (s *Service) JoinQueue(ctx context.Context, queueID, userID int64, group st
 		slotTimePtr = &t
 	}
 
-	position, err := s.storage.AddParticipant(ctx, queue, userID, slotTimePtr)
+	position, err := s.storage.AddParticipant(ctx, queue, userID, fullName, slotTimePtr)
 	if err != nil {
 		return 0, err
 	}
@@ -102,6 +103,7 @@ func (s *Service) JoinQueue(ctx context.Context, queueID, userID int64, group st
 			s.log.Warn("failed to send notification", slog.Any("err", err))
 		}
 	}
+	s.notifyTopPositions(ctx, queueID, queue.Title)
 	return position, nil
 }
 
@@ -114,7 +116,11 @@ func (s *Service) LeaveQueue(ctx context.Context, queueID, userID int64, group s
 		return ErrGroupMismatch
 	}
 
-	return s.storage.RemoveParticipant(ctx, queue, userID)
+	if err := s.storage.RemoveParticipant(ctx, queue, userID); err != nil {
+		return err
+	}
+	s.notifyTopPositions(ctx, queueID, queue.Title)
+	return nil
 }
 
 func (s *Service) AdvanceQueue(ctx context.Context, queueID int64, actorID int64, group string) (models.Participant, error) {
@@ -136,14 +142,7 @@ func (s *Service) AdvanceQueue(ctx context.Context, queueID int64, actorID int64
 	if err != nil {
 		return models.Participant{}, err
 	}
-	// notify new first participant if exists
-	_, participants, err := s.storage.GetQueue(ctx, queueID)
-	if err == nil && len(participants) > 0 {
-		p := participants[0]
-		if err := s.notif.NotifyPositionSoon(ctx, p.UserID, queue.Title, p.Position); err != nil {
-			s.log.Warn("failed to send notification", slog.Any("err", err))
-		}
-	}
+	s.notifyTopPositions(ctx, queueID, queue.Title)
 	return removed, nil
 }
 
@@ -161,13 +160,7 @@ func (s *Service) RemoveParticipant(ctx context.Context, queueID int64, userID i
 	if err := s.storage.RemoveParticipant(ctx, queue, userID); err != nil {
 		return err
 	}
-	_, participants, err := s.storage.GetQueue(ctx, queueID)
-	if err == nil && len(participants) > 0 {
-		p := participants[0]
-		if err := s.notif.NotifyPositionSoon(ctx, p.UserID, queue.Title, p.Position); err != nil {
-			s.log.Warn("failed to send notification", slog.Any("err", err))
-		}
-	}
+	s.notifyTopPositions(ctx, queueID, queue.Title)
 	return nil
 }
 
@@ -197,4 +190,78 @@ func (s *Service) DeleteQueue(ctx context.Context, queueID int64, actorID int64,
 		return ErrForbidden
 	}
 	return s.storage.DeleteQueue(ctx, queueID)
+}
+
+func (s *Service) UpdateQueue(ctx context.Context, queueID int64, actorID int64, group string, title string, description string) (models.Queue, error) {
+	queue, _, err := s.storage.GetQueue(ctx, queueID)
+	if err != nil {
+		return models.Queue{}, err
+	}
+	if queue.GroupCode != group {
+		return models.Queue{}, ErrGroupMismatch
+	}
+	if queue.OwnerID != actorID {
+		return models.Queue{}, ErrForbidden
+	}
+	return s.storage.UpdateQueue(ctx, queueID, title, description)
+}
+
+func (s *Service) AddParticipant(ctx context.Context, queueID int64, userID int64, fullName string, actorID int64, group string, slotTimeStr string) (int32, error) {
+	queue, _, err := s.storage.GetQueue(ctx, queueID)
+	if err != nil {
+		return 0, err
+	}
+	if queue.GroupCode != group {
+		return 0, ErrGroupMismatch
+	}
+	if queue.OwnerID != actorID {
+		return 0, ErrForbidden
+	}
+	if queue.Mode != models.ModeManaged {
+		return 0, ErrForbidden
+	}
+	if queue.Status != models.StatusActive {
+		return 0, ErrQueueInactive
+	}
+
+	var slotTimePtr *time.Time
+	if queue.Mode == models.ModeSlots {
+		if slotTimeStr == "" {
+			return 0, ErrSlotRequired
+		}
+		t, err := time.Parse(time.RFC3339, slotTimeStr)
+		if err != nil {
+			return 0, fmt.Errorf("invalid slot_time: %w", err)
+		}
+		slotTimePtr = &t
+	}
+
+	position, err := s.storage.AddParticipant(ctx, queue, userID, fullName, slotTimePtr)
+	if err != nil {
+		return 0, err
+	}
+	// Notify added user regardless of position (manual add requirement)
+	if err := s.notif.NotifyPositionSoon(ctx, userID, queue.Title, position); err != nil {
+		s.log.Warn("failed to send manual add notification", slog.Any("err", err))
+	}
+	s.notifyTopPositions(ctx, queueID, queue.Title)
+	return position, nil
+}
+
+// notifyTopPositions sends notifications to first three participants (if any).
+func (s *Service) notifyTopPositions(ctx context.Context, queueID int64, queueTitle string) {
+	_, participants, err := s.storage.GetQueue(ctx, queueID)
+	if err != nil {
+		return
+	}
+	limit := 3
+	if len(participants) < limit {
+		limit = len(participants)
+	}
+	for i := 0; i < limit; i++ {
+		p := participants[i]
+		if err := s.notif.NotifyPositionSoon(ctx, p.UserID, queueTitle, p.Position); err != nil {
+			s.log.Warn("failed to send notification", slog.Any("err", err))
+		}
+	}
 }

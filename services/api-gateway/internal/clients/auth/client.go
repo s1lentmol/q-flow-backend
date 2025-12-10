@@ -17,9 +17,10 @@ func New(conn *grpc.ClientConn) *Client {
 	}
 }
 
-func (c *Client) Register(ctx context.Context, email, password string) (int64, error) {
+func (c *Client) Register(ctx context.Context, email, fullName, password string) (int64, error) {
 	resp, err := c.api.Register(ctx, &authv1.RegisterRequest{
 		Email:    email,
+		FullName: fullName,
 		Password: password,
 	})
 	if err != nil {
