@@ -3,9 +3,5 @@ server:
 
 queue:
   backendBaseUrl: "http://localhost:8080"
-  queueId: 1
-  groupCode: "IS-2025"
-  slotTime: "10:30-11:00"
 
-scheduler:
-  cron: "0 0 10 * * ?"
+
