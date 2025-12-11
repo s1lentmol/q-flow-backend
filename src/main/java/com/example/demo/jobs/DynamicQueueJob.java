@@ -6,7 +6,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+// выполнение запроса на добавление в очередь
 public class DynamicQueueJob implements Job {
 
     private static final Logger log = LoggerFactory.getLogger(DynamicQueueJob.class);

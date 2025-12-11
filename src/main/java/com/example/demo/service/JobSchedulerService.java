@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
 import java.util.Date;
-
+// сервис для управления запросами на становление в очередь
 @Service
 public class JobSchedulerService {
 

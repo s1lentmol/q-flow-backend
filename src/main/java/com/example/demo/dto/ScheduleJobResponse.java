@@ -3,7 +3,7 @@ package com.example.demo.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+// класс с ответом
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
